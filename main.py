@@ -21,7 +21,7 @@ def ask_quistion(message):
         bot.send_message(message.chat.id, f'{questions_list.pop()}', reply_markup=keyboard1)
     else:
         bot.send_message(message.chat.id, f'А, нет, не идём...')
-        bot.send_message(message.chat.id, f'ПОооооОбеда, твой секретный код: {rand_string}, неговори никому!!')
+        bot.send_message(message.chat.id, f'ПОооооОбеда, твой секретный код: {rand_string.upper()}, неговори никому!!')
 
 
 @bot.message_handler(commands=['start'])
