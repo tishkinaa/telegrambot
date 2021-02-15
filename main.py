@@ -34,7 +34,7 @@ def start_message(message):
 @bot.message_handler(content_types=['text'])
 def send_text(message):
     if message.text.lower() == 'правлиьный ответ':
-        bot.send_message(message.chat.id, 'Это Правлильный ответ!!!')
+        bot.send_message(message.chat.id, 'Это Правильный ответ!!!')
         bot.send_message(message.chat.id, 'Идём дальше...')
         ask_quistion(message)
 
