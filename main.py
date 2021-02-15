@@ -13,7 +13,7 @@ token = '1576012965:AAGdavZE7eLE_JlMgL9b9e0bCSh77hlZYDM'
 bot = telebot.TeleBot(token)
 
 keyboard1 = telebot.types.ReplyKeyboardMarkup(True, True)
-keyboard1.row('Правлиьный ответ', 'Неправильный ответ')
+keyboard1.row('Правильный ответ', 'Неправильный ответ')
 
 questions_list = []
 def ask_quistion(message):
@@ -33,7 +33,7 @@ def start_message(message):
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
-    if message.text.lower() == 'правлиьный ответ':
+    if message.text.lower() == 'правильный ответ':
         bot.send_message(message.chat.id, 'Это Правильный ответ!!!')
         bot.send_message(message.chat.id, 'Идём дальше...')
         ask_quistion(message)
