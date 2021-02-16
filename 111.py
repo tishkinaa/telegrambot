@@ -23,3 +23,14 @@ print(users['Anton'].userlist.pop())
 print(users['Anton'].userlist)
 
 
+dict = {'1': 'odin', '2': 'dva'}
+
+print(dict)
+
+
+def my_f():
+    global dict
+    dict = {}
+
+my_f()
+print(dict)

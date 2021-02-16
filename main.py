@@ -59,6 +59,10 @@ def ask_quistion(message):
         bot.send_message('-512457793', f'Для {message.from_user.first_name} получен код: {secret_code}')
 
 
+@bot.message_handler(commands=['reset'])
+def reset_message(message):
+    global users
+    users = {}
 
 
 @bot.message_handler(commands=['start'])
