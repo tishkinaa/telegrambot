@@ -48,6 +48,7 @@ def code_generator():
 
 def ask_quistion(message):
     if users[message.chat.id].right_answers < 4:
+        random.shuffle(users[message.chat.id].questions)
         hook_question = users[message.chat.id].questions.pop()
         question, answer = hook_question[0], hook_question[1]
         users[message.chat.id].right_answer = answer

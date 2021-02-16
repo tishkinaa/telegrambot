@@ -8,9 +8,19 @@
 #     for c in capitals_lst:
 #         f.writelines(f'{c[0]};{c[1]}\n')
 
-with open('Quistions.csv', 'r') as f:
+with open('Quistions.csv', 'r', encoding='utf-8') as f:
     questions_list = f.read()
 questions_list = questions_list.split('\n')
 questions_list = [c.split(';') for c in questions_list]
 questions_list.pop()
-print(questions_list)
+
+
+print(len(questions_list))
+
+def my_f():
+    my_ql = questions_list[:]
+    my_ql.pop()
+    print(len(questions_list))
+
+my_f()
+print(len(questions_list))
