@@ -16,7 +16,7 @@ users = {}
 class User:
     def __init__(self, user_id):
         self.user_id = user_id
-        self.questions = questions_list
+        self.questions = questions_list[:]
         self.right_answer = ''
         self.right_answers = 0
         self.wait_video = False
