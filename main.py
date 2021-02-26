@@ -70,7 +70,11 @@ def reset_message(message):
 def start_message(message):
     if message.chat.id not in users:
         users[message.chat.id] = User(message.chat.id)
-    bot.send_message(message.chat.id, f'Для запуска викторины напиши /go')
+    bot.send_message(message.chat.id,
+    f'''Приветствую! Тут вас ждет небольшая виторина по фактам из жизни именинницы! \n 
+    Пройдете викторину - получите код для движка! \n
+    За каждый неверный ответ придется выполнить командное задание, снять его на видео и отправить его мне!\n
+    Начнем с простого: для запуска викторины напиши /go''')
 
 @bot.message_handler(commands=['go'])
 def go_message(message):
