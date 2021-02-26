@@ -3,24 +3,48 @@ import random
 import string
 
 global questions_list
-with open('Quistions.csv', 'r') as f:
+with open('grin_questions.csv', 'r', encoding='utf-8') as f:
     questions_list = f.read()
+
 questions_list = questions_list.split('\n')
 random.shuffle(questions_list)
 questions_list = [c.split(';') for c in questions_list]
-questions_list.pop()
 
 token = '1576012965:AAGdavZE7eLE_JlMgL9b9e0bCSh77hlZYDM'
 users = {}
+
+msgs_for_ranswer = ['Отлично! Это правильный ответ\nА вот это знаешь?',
+'Да вы хорошо знаете Лесю, дайте виртуальное пять!\nСледующий вопрос',
+'Верно!\nИдем дальше']
+
+wanswer_pattern = 'Чтобы продолжить получать вопросы, вашей команде нужно записать видео и отправить как файл мне сюда!'
+
+msgs_for_wanswer = [f'Упсики.. это неправильный ответ.\n{wanswer_pattern}\n Пусть каждый участник команды назовет по одному слову, которое описывает Лесю лучше всего!',
+                    f'Ой..а вы ошиблись:)\n{wanswer_pattern}\nВсей команде нужно изобразить заскучавший полуночный биг бен!',
+                    f'Неа, это неправильный ответ!\n{wanswer_pattern}\nВсей команде нужно ....']
 
 class User:
     def __init__(self, user_id):
         self.user_id = user_id
         self.questions = questions_list[:]
+        random.shuffle(self.questions)
         self.right_answer = ''
         self.right_answers = 0
         self.wait_video = False
         self.go = False
+        self.wanswers = msgs_for_wanswer[:]
+        random.shuffle(self.wanswers)
+        self.ranswers = msgs_for_ranswer[:]
+        random.shuffle(self.ranswers)
+
+    def get_answer(self, how_answer):
+        if how_answer == 'r':
+            response = self.ranswers.pop()
+            self.ranswers.insert(0, response)
+        else:
+            response = self.wanswers.pop()
+            self.wanswers.insert(0, response)
+        return response
 
     def __eq__(self, other):
         if self.user_id == other:
@@ -31,10 +55,11 @@ class User:
 bot = telebot.TeleBot(token)
 
 def make_keyboard(right_answer, user_questions_list):
-    answers_list = [right_answer]
-    pos_list = [x for x in range(len(user_questions_list)-1)]
-    for i in range(3):
-        answers_list.append(user_questions_list[random.choice(pos_list)][1])
+    answers_list = right_answer
+    print(answers_list)
+    # pos_list = [x for x in range(len(user_questions_list)-1)]
+    # for i in range(3):
+    #     answers_list.append(user_questions_list[random.choice(pos_list)][1])
     random.shuffle(answers_list)
     keyboard = telebot.types.ReplyKeyboardMarkup(True, True)
     keyboard.row(answers_list[0], answers_list[1])
@@ -48,15 +73,14 @@ def code_generator():
 
 def ask_quistion(message):
     if users[message.chat.id].right_answers < 4:
-        random.shuffle(users[message.chat.id].questions)
+        # random.shuffle(users[message.chat.id].questions)
         hook_question = users[message.chat.id].questions.pop()
-        question, answer = hook_question[0], hook_question[1]
-        users[message.chat.id].right_answer = answer
-        bot.send_message(message.chat.id, f'Столица страны: {question}', reply_markup=make_keyboard(answer, users[message.chat.id].questions))
+        question, answer = hook_question[0], hook_question[1:5]
+        users[message.chat.id].right_answer = answer[0]
+        bot.send_message(message.chat.id, f'{question}', reply_markup=make_keyboard(answer, users[message.chat.id].questions))
     else:
-        bot.send_message(message.chat.id, f'А, нет, не идём...')
         secret_code = code_generator()
-        bot.send_message(message.chat.id, f'ПОооооОбеда, твой секретный код: {secret_code}, неговори никому!!')
+        bot.send_message(message.chat.id, f'Поздравляю! Вы справились! Ваш код {secret_code}')
         bot.send_message('-512457793', f'Для {message.from_user.first_name} получен код: {secret_code}')
 
 
@@ -71,10 +95,11 @@ def start_message(message):
     if message.chat.id not in users:
         users[message.chat.id] = User(message.chat.id)
     bot.send_message(message.chat.id,
-    f'''Приветствую! Тут вас ждет небольшая виторина по фактам из жизни именинницы! \n 
-    Пройдете викторину - получите код для движка! \n
-    За каждый неверный ответ придется выполнить командное задание, снять его на видео и отправить его мне!\n
-    Начнем с простого: для запуска викторины напиши /go''')
+    f'''Приветствую! Тут вас ждет небольшая виторина по фактам из жизни именинницы!
+Пройдете викторину - получите код для движка!
+За каждый неверный ответ придется выполнить командное задание, снять его на видео и отправить его мне!
+
+Начнем с простого: для запуска викторины напиши /go''')
 
 @bot.message_handler(commands=['go'])
 def go_message(message):
@@ -101,14 +126,11 @@ def send_text(message):
                 bot.send_message(message.chat.id, f'Жду видосик...')
             else:
                 if message.text.lower() == users[message.chat.id].right_answer.lower():
-                    bot.send_message(message.chat.id, 'Это Правильный ответ!!!')
-                    bot.send_message(message.chat.id, 'Идём дальше...')
+                    bot.send_message(message.chat.id, users[message.chat.id].get_answer('r'))
                     ask_quistion(message)
                     users[message.chat.id].right_answers += 1
                 else:
-                    bot.send_message(message.chat.id, 'Это НЕ правильный ответ')
-                    bot.send_message(message.chat.id, f'Это ПроВаЛ(((')
-                    bot.send_message(message.chat.id, f'С тебя видосик!)')
+                    bot.send_message(message.chat.id, users[message.chat.id].get_answer('w'))
                     users[message.chat.id].wait_video = True
 
 
