@@ -114,7 +114,7 @@ def ask_quistion(message):
         bot.send_message(message.chat.id, f'{question}', reply_markup=make_keyboard(answer, users[message.chat.id].questions))
     else:
         # secret_code = code_generator()
-        bot.send_message(message.chat.id, f'Поздравляю! Вы справились! Ваши координаты 43.418412, 39.924003')
+        bot.send_message(message.chat.id, f'Поздравляю! Вы справились! Ваш код для движка - Победа')
         bot.send_message('-512457793', f'Для {message.from_user.first_name} код получен')
 
 
