@@ -36,7 +36,7 @@ with open(os.path.join(project_name, DATE_FILE_NAME), 'w') as f:
 
 
 # with open(f'{project_name}/{DATE_FILE_NAME}.json', "r") as f:
-with open(os.path.join(project_name, DATE_FILE_NAME), 'w') as f:
+with open(os.path.join(project_name, DATE_FILE_NAME), 'r') as f:
     data = json.load(f)
 
 # blocks = data['bulks']
