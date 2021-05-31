@@ -1,211 +1,70 @@
-import telebot
-import random
 
-global questions_list
-with open('grin_questions.csv', 'r', encoding='utf-8') as f:
-    questions_list = f.read()
+url = "https://api.pik.ru/v1/bulk/chessplan?new=1&block_id=241&types=1,2"
+# url = "https://api.pik.ru/v1/bulk/chessplan?new=1&block_id=161&types=1,2"
 
-questions_list = questions_list.split('\n')
-random.shuffle(questions_list)
-questions_list = [c.split(';') for c in questions_list]
+import urllib.request
+import json
+from bs4 import BeautifulSoup as BS
+from datetime import date as today
+import os
 
-token = '1576012965:AAGdavZE7eLE_JlMgL9b9e0bCSh77hlZYDM'
-users = {}
+project_name = 'Дмитровский парк'
 
-msgs_for_ranswer = ['Отлично! Это правильный ответ\nА вот это знаешь?',
-                    'Да вы хорошо знаете Лесю, дайте виртуальное пять!\nСледующий вопрос',
-                    'Верно!\nИдем дальше']
+DATE_FILE_NAME = today.today().strftime('%d-%m-%Y') + '.json'
+DATE = today.today().strftime('%d.%m.%Y')
 
-wanswer_pattern = 'Чтобы продолжить получать вопросы, вашей команде нужно записать видео и отправить мне сюда!'
+def beautify_num(num):
+    num = str(num)
+    res = ''
+    for i in range(1, len(num) + 1):
+        res += num[-i]
+        if i % 3 == 0:
+            res += ' '
+    return res[::-1]
 
-msgs_for_wanswer = [
-    f'''Упсики.. это неправильный ответ.
-{wanswer_pattern}
-Пусть каждый участник команды назовет по одному слову, которое описывает Лесю лучше всего!
-Длина видео не больше 1,5 минут!''',
-    f'''Ой..а вы ошиблись:)
-{wanswer_pattern}
+def get_data_from_url(url):
+    html = urllib.request.urlopen(url = url)
+    html = BS(html, 'html.parser')
+    html_json = json.loads(html.text)
+    return html_json
 
-Всей команде нужно изобразить серферов на Баренцовом море!
-Длина видео не больше 1 минуты!"''',
-    f'''
-Неа, это неправильный ответ!
-{wanswer_pattern}
-
-Всей команде нужно изобразить отчаившихся зимбабвийских шаманов вызвать дождь на дуэль!
-Длина видео не больше 1 минуты!''',
-    f'''Ой..а вы ошиблись:)
-{wanswer_pattern}
-
-Всей команде нужно изобразить папуасов из Новой Гвинеи, которые впервые увидели белого человека!
-Длина видео не больше 1 минуты!''',
-    f'''Упсики.. это неправильный ответ.
-{wanswer_pattern}
-
-Пусть каждый участник команды чего-то пожелает Лесе в трех словах!
-Длина видео не больше 1,5 минуты!''',
-    f'''Неа, это неправильный ответ!
-{wanswer_pattern}
-
-Пусть каждый участник команды кратко поделится впечатлением сегодняшнего дня!
-Длина видео не больше 1,5 минуты!''',
-    f'''Неа, это неправильный ответ!
-{wanswer_pattern}
-
-Всей команде нужно станцевать сиртаки!
-Длина видео не больше 1 минуты!'''
-]
-random.shuffle(msgs_for_wanswer)
+# Запись полученных данных в файл
+if not os.path.exists(project_name):
+    os.mkdir(project_name)
+with open(os.path.join(project_name, DATE_FILE_NAME), 'w') as f:
+    json.dump(get_data_from_url(url), f)
 
 
-class User:
-    def __init__(self, user_id):
-        self.user_id = user_id
-        self.questions = questions_list[:]
-        random.shuffle(self.questions)
-        self.right_answer = ''
-        self.right_answers = 0
-        self.wait_video = False
-        self.go = False
-        self.ranswers = msgs_for_ranswer[:]
-        random.shuffle(self.ranswers)
+# with open(f'{project_name}/{DATE_FILE_NAME}.json', "r") as f:
+with open(os.path.join(project_name, DATE_FILE_NAME), 'w') as f:
+    data = json.load(f)
 
-    def get_answer(self, how_answer):
-        if how_answer == 'r':
-            response = self.ranswers.pop()
-            self.ranswers.insert(0, response)
-        else:
-            response = msgs_for_wanswer.pop()
-            msgs_for_wanswer.insert(0, response)
-        return response
+# blocks = data['bulks']
 
-    def __eq__(self, other):
-        if self.user_id == other:
-            return True
-        else:
-            return False
+for block in data['bulks']:
+    if not os.path.exists(project_name):
+        os.mkdir(project_name)
+    sections = block['sections']
+    for section in sections:
+        if not os.path.exists(f'{project_name}/{block["name"]}'):
+            os.mkdir(f'{project_name}/{block["name"]}')
 
-
-bot = telebot.TeleBot(token)
-
-
-def make_keyboard(right_answer):
-    answers_list = right_answer
-    random.shuffle(answers_list)
-    keyboard = telebot.types.ReplyKeyboardMarkup(True, True)
-    keyboard.row(answers_list[0], answers_list[1])
-    keyboard.row(answers_list[2], answers_list[3])
-    return keyboard
-
-
-def ask_quistion(message):
-    if users[message.chat.id].right_answers < 4:
-        hook_question = users[message.chat.id].questions.pop()
-        question, answer = hook_question[0], hook_question[1:5]
-        users[message.chat.id].right_answer = answer[0]
-        bot.send_message(message.chat.id, f'{question}', reply_markup=make_keyboard(answer))
-    else:
-        bot.send_message(message.chat.id, f'Поздравляю! Вы справились! Ваш код для движка - Победа')
-        bot.send_message('-1001177320853', f'Для {message.from_user.first_name} код получен')
-
-
-@bot.message_handler(commands=['reset'])
-def reset_message(message):
-    global users
-    users = {}
-
-
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    if message.chat.id not in users:
-        users[message.chat.id] = User(message.chat.id)
-    if not users[message.chat.id].go:
-        bot.send_message(message.chat.id,
-                         f'''Приветствую! Тут вас ждет небольшая викторина по фактам из жизни именинницы!
-Пройдете викторину - получите код для движка!
-За каждый неверный ответ придется выполнить командное задание, снять его на видео и отправить его мне!
-
-Начнем с простого: для запуска викторины напиши /go''')
-
-
-@bot.message_handler(commands=['go'])
-def go_message(message):
-    if message.chat.id not in users:
-        bot.send_message(message.chat.id,
-                         f'Мы как-то пропустили момент со знакомством, пиши /start и я тебя запомню...')
-    else:
-        if not users[message.chat.id].go:
-            users[message.chat.id].go = True
-            ask_quistion(message)
-        else:
-            if users[message.chat.id].wait_video:
-                bot.send_message(message.chat.id, f'Жду видосик...')
-
-
-@bot.message_handler(content_types=['text'])
-def send_text(message):
-    if message.chat.id not in users:
-        bot.send_message(message.chat.id,
-                         f'Мы как-то пропустили момент со знакомством, пиши /start и я тебя запомню...')
-    else:
-        if not users[message.chat.id].go:
-            bot.send_message(message.chat.id, f'Для запуска викторины напиши /go')
-        else:
-            if users[message.chat.id].wait_video:
-                bot.send_message(message.chat.id, f'Жду видосик...')
-            else:
-                if message.text.lower() == users[message.chat.id].right_answer.lower():
-                    bot.send_message(message.chat.id, users[message.chat.id].get_answer('r'))
-                    ask_quistion(message)
-                    users[message.chat.id].right_answers += 1
+        arr = []
+        arr.append(DATE)
+        for floor in list(section['floors'].keys())[::-1]:
+            flats = section['floors'][floor]['flats']
+            for flat in flats:
+                if flat['status'] == 'free':
+                    arr.append(beautify_num(flat['price']))
+                elif flat['status'] == 'unavailable':
+                    arr.append('')
                 else:
-                    bot.send_message(message.chat.id, users[message.chat.id].get_answer('w'))
-                    users[message.chat.id].wait_video = True
-
-
-@bot.message_handler(content_types=['video'])
-def return_video(message):
-    if message.chat.id not in users:
-        bot.send_message(message.chat.id,
-                         f'Мы как-то пропустили момент со знакомством, пиши /start и я тебя запомню...')
-        return
-    if message.chat.id in users and users[message.chat.id].wait_video:
-        users[message.chat.id].wait_video = False
-        users[message.chat.id].right_answers += 1
-        bot.send_message(message.chat.id, f'Окей, идём дальше!')
-        ask_quistion(message)
-        bot.forward_message('-1001177320853', message.chat.id, message.id)
-    else:
-        if not users[message.chat.id].go:
-            bot.send_message(message.chat.id, f'Для запуска викторины напиши /go')
-
-
-@bot.message_handler(
-    content_types=['audio', 'photo', 'sticker', 'video_note', 'voice', 'location', 'contact', 'new_chat_members',
-                   'left_chat_member', 'new_chat_title', 'new_chat_photo', 'delete_chat_photo', 'group_chat_created',
-                   'supergroup_chat_created', 'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id',
-                   'pinned_message'])
-def return_media(message):
-    if message.chat.id not in users:
-        bot.send_message(message.chat.id,
-                         f'Мы как-то пропустили момент со знакомством, пиши /start и я тебя запомню...')
-    else:
-        if not users[message.chat.id].go:
-            bot.send_message(message.chat.id, f'Для запуска викторины напиши /go')
-        else:
-            if users[message.chat.id].wait_video:
-                bot.send_message(message.chat.id, f'Не-не-не, не то, жду видео!')
-
-
-@bot.message_handler(content_types=['document'])
-def return_document(message):
-    file_name = message.document.file_name
-    file_name = file_name.split('.')
-    file_name = file_name[len(file_name) - 1].upper()
-    if file_name in ['MOV', 'MPEG4', 'MP4', 'AVI', 'WMV', 'MPEGPS', 'FLV', '3GP']:
-        return_video(message)
-    else:
-        return_media(message)
-
-
-bot.polling()
+                    arr.append('reserved')
+        if not os.path.exists(f"{project_name}/{block['name']}/{section['name']}.csv"):
+            with open(f"{project_name}/{block['name']}/{section['name']}.csv", 'a') as f:
+                f.write('date/flat;')
+                f.write(';'.join([str(x) for x in range(len(arr)-1)]))
+                f.write(';\n')
+        with open(f"{project_name}/{block['name']}/{section['name']}.csv", 'a') as f:
+            f.write(';'.join(arr))
+            f.write(';\n')
