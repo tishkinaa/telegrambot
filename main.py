@@ -68,3 +68,5 @@ for block in data['bulks']:
         with open(f"{project_name}/{block['name']}/{section['name']}.csv", 'a') as f:
             f.write(';'.join(arr))
             f.write(';\n')
+
+print(os.listdir())
